@@ -10,6 +10,12 @@ import vision_definitions
 IP = "nao.local"  # Replace here with your NAOqi's IP address.
 PORT = 9559
 
+def parse_hsy(data):
+	hsy = []
+	bytearray_data = bytearray.fromhex(str(hex(data))[2::])
+	hsv.append(bytearray_data[2], bytearray_data[1], bytearray_data[0])
+
+
 ####
 # Create proxy on ALVideoDevice
 
@@ -18,7 +24,7 @@ print "Creating ALVideoDevice proxy to ", IP
 camProxy = ALProxy("ALVideoDevice", IP, PORT)
 
 ####
-# Register a Generic Video Module
+# Get camera frame
 
 resolution = vision_definitions.kQVGA
 colorSpace = vision_definitions.kHSYColorSpace
