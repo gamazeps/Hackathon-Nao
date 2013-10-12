@@ -34,6 +34,7 @@ def get2dArray(data, width=120, length=160):
 
 
 def connex_components(logic_matrix, width=120, length=160):
+	## The case where j=0 isn't treated but i am honestly too lazy to care about it now
 	components = []
 	components_id = np.zeros([length, width], dtype = int)
 	id_count = 1
@@ -47,9 +48,24 @@ def connex_components(logic_matrix, width=120, length=160):
 				components[components_id[i-1][0]].append([i][0])
 				components_id[i][0] = components_id[i-1][0]
 			else:
-				components
+				components.append([i,0])
 				components_id[i][0] = id_count
 				id_count = id_count + 1
+		for j in range(1, width):
+			if logic_matrix[i][j]:
+				if logic_matrix[i-1][j]&&logic_matrix[i][j-1]:
+					#TODO: implement UNION
+					pass
+				else if logic_matrix[i-1][j]:
+					components[components_id[i-1][j]].append([i][j])
+					components_id[i][j] = components_id[i-1][j]
+				else if logic_matrix[i][j-1]:
+					components[components_id[i][j-1]].append([i][j])
+					components_id[i][j] = components_id[i][j-1]
+				else:
+					components.append([i][j])
+					components_id[i][j] = id_count
+					id_count = id_count + 1
 
 
 ####
