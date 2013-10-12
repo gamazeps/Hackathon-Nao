@@ -33,7 +33,7 @@ def get2dArray(data, width=120, length=160):
 	return matrix
 
 
-def connex_components(logic_matrix, width=120, length=160):
+def connex_components(logic_matrix, width = 120, length = 160):
 	## The case where j=0 isn't treated but i am honestly too lazy to care about it now
 	components = []
 	components_id = np.zeros([length, width], dtype = int)
@@ -44,28 +44,46 @@ def connex_components(logic_matrix, width=120, length=160):
 		id_count = id_count + 1
 	for i in range(1,length):
 		if logic_matrix[i][0]:
-			if logic_matrix[i-1][0]:
-				components[components_id[i-1][0]].append([i][0])
-				components_id[i][0] = components_id[i-1][0]
+			if logic_matrix[i - 1][0]:
+				components[components_id[i - 1][0]].append([i][0])
+				components_id[i][0] = components_id[i - 1][0]
 			else:
 				components.append([i,0])
 				components_id[i][0] = id_count
 				id_count = id_count + 1
 		for j in range(1, width):
 			if logic_matrix[i][j]:
-				if logic_matrix[i-1][j]&&logic_matrix[i][j-1]:
-					#TODO: implement UNION
+				if logic_matrix[i-1][j] && logic_matrix[i][j - 1]:
+					if components_id[i - 1][j] != components_id[i][j - 1]:
+						union(components, components_id, components_id[i - 1][j], components_id[i][j - 1])
+					else:
+						components[components_id[i - 1][j]].append([i][j])
+						components_id[i][j] = components_id[i - 1][j]
 					pass
-				else if logic_matrix[i-1][j]:
-					components[components_id[i-1][j]].append([i][j])
-					components_id[i][j] = components_id[i-1][j]
-				else if logic_matrix[i][j-1]:
-					components[components_id[i][j-1]].append([i][j])
-					components_id[i][j] = components_id[i][j-1]
+				else if logic_matrix[i - 1][j]:
+					components[components_id[i - 1][j]].append([i][j])
+					components_id[i][j] = components_id[i - 1][j]
+				else if logic_matrix[i][j - 1]:
+					components[components_id[i][j - 1]].append([i][j])
+					components_id[i][j] = components_id[i][j - 1]
 				else:
 					components.append([i][j])
 					components_id[i][j] = id_count
 					id_count = id_count + 1
+	return components
+
+def union(components, components_id, id1, id2):
+	if len(components[id1])>len(components[id2]):
+		for k in components[id2]:
+			components_id[k[1]][k[2]] = id1
+			components[id2].remove(k)
+			components[id1].append(k)
+	else:
+		for k in components[id1]:
+			components_id[k[1]][k[2]] = id2
+			components[id1].remove(k)
+			components[id2].append(k)
+
 
 
 ####
