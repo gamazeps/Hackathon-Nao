@@ -4,8 +4,8 @@
 # through ALVideoDevice in python.
 # Nothing interesting is done with the images in this example.
 
-#from naoqi import ALProxy
-#import vision_definitions
+from naoqi import ALProxy
+import vision_definitions
 import numpy as np
 
 IP = "nao.local"  # Replace here with your NAOqi's IP address.
@@ -18,7 +18,7 @@ def parse_hsy(data):
 	return hsy
 
 # Applies a basic threshold to an hsv pixel
-def hsv_threshold(source, data, dist=10):
+def hsy_threshold(source, data, dist = 10):
 	if (abs(source[0] - data[0]) > dist):
 		return false
 	elif (abs(source[1] - data[1]) > dist):
@@ -27,6 +27,13 @@ def hsv_threshold(source, data, dist=10):
 		return false
 	else:
 		return true
+
+def get2D_thresholded(array_source, data, width = 120, length = 160, dist = 10):
+	bit_array = np.zeros([length, width], dtype = bool)
+	for i in range(length):
+		for j in range(width):
+			bit_array[i][j] = hsy_threshold(array_source[i][j], data, dist)
+	return bit_array
 
 # Returns a 2D array from a 1D array, given the width 
 def get2d_array(data, width=120, length=160):
@@ -41,7 +48,7 @@ def get2d_array(data, width=120, length=160):
 # Finds the connex components in a binary 2D array, the data structure employed is a lazy union-find one,
 # is executed in a O(n*ln(n)) complexity in the average and worst case (where n is the numpber of pixels) 
 # and in best case scenario in O(n) 
-def connex_components(logic_matrix, width = 120, length = 160):
+def connex_components(logic_matrix, size = 7, width = 120, length = 160):
 	components = []
 	components_id = np.zeros([length, width], dtype = int)
 	id_count = 1
@@ -80,9 +87,9 @@ def connex_components(logic_matrix, width = 120, length = 160):
 	# Here we remove all the empty components and the one too small to be cards
 	lists_to_remove = []
 	for component in components:
-		if len(component) < 1:
+		if len(component) < size:
 			lists_to_remove.append(component)
-	for i in range(lists_to_remove):
+	for component in range(lists_to_remove):
 		components.remove(component)
 
 	return components
@@ -129,27 +136,47 @@ def get_cards_pos(blue_cards_components, red_cards_components, yellow_cards_comp
 		cards.append(card[1])
 	return cards
 
+def process_image(raw_data):
+	BLUE = [170, 85, 15]
+	RED = [0, 100, 39]
+	YELLOW = [28, 98, 45]
+	hsy_data = []
+	for pixel in raw_data:
+		hsy_data.append(parse_hsy(pixel))
+	hsy_array = get2d_array(hsy_data)
+	blue_array = get2D_thresholded(hsy_array, BLUE) 
+	blue_cards_components = connex_components(blue_array)
+	red_array = get2D_thresholded(hsy_array, RED) 
+	red_cards_components = connex_components(red_array)
+	yellow_array = get2D_thresholded(hsy_array, YELLOW) 
+	yellow_cards_components = connex_components(yellow_array)
+	return get_cards_pos(blue_cards_components, red_cards_components, yellow_cards_components)
+
+
 ####
 # Create proxy on ALVideoDevice
 
-#print "Creating ALVideoDevice proxy to ", IP
+print "Creating ALVideoDevice proxy to ", IP
 
 # = ALProxy("ALVideoDevice", IP, PORT)
 
 ####
 # Get camera frame
 
-#resolution = vision_definitions.kQVGA
-#colorSpace = vision_definitions.kHSYColorSpace
+resolution = vision_definitions.kQVGA
+colorSpace = vision_definitions.kHSYColorSpace
 fps = 15
 
-#nameId = camProxy.subscribe("python_GVM", resolution, colorSpace, fps)
+nameId = camProxy.subscribe("python_GVM", resolution, colorSpace, fps)
 #print nameId
 
 
 print 'getting an image in remote'
-#image = camProxy.getImageRemote(nameId)[6]
+image = camProxy.getImageRemote(nameId)[6]
+cards = process_image(image)
 
-#camProxy.unsubscribe(nameId)
+print cards
+
+camProxy.unsubscribe(nameId)
 
 print 'end of gvm_getImageLocal python script'
